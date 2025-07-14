@@ -2035,8 +2035,8 @@ class SAVPE(nn.Module):
 
         return F.normalize(aggregated.transpose(-2, -3).reshape(B, Q, -1), dim=-1, p=2)
 
-class MANet(nn.Module):
 
+class MANet(nn.Module):
     def __init__(self, c1, c2, n=1, shortcut=False, p=1, kernel_size=3, g=1, e=0.5):
         super().__init__()
         self.c = int(c2 * e)
@@ -2045,8 +2045,9 @@ class MANet(nn.Module):
         self.m = nn.ModuleList(Bottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n))
         self.cv_block_1 = Conv(2 * self.c, self.c, 1, 1)
         dim_hid = int(p * 2 * self.c)
-        self.cv_block_2 = nn.Sequential(Conv(2 * self.c, dim_hid, 1, 1), DWConv(dim_hid, dim_hid, kernel_size, 1),
-                                      Conv(dim_hid, self.c, 1, 1))
+        self.cv_block_2 = nn.Sequential(
+            Conv(2 * self.c, dim_hid, 1, 1), DWConv(dim_hid, dim_hid, kernel_size, 1), Conv(dim_hid, self.c, 1, 1)
+        )
 
     def forward(self, x):
         y = self.cv_first(x)
@@ -2058,15 +2059,16 @@ class MANet(nn.Module):
 
         return self.cv_final(torch.cat(y, 1))
 
+
 class CAB(nn.Module):
     def __init__(self, nc, reduction=8, bias=False):
-        super(CAB, self).__init__()
+        super().__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.conv_du = nn.Sequential(
-                nn.Conv2d(nc, nc // reduction, kernel_size=1, padding=0, bias=bias),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(nc // reduction, nc, kernel_size=1, padding=0, bias=bias),
-                nn.Sigmoid()
+            nn.Conv2d(nc, nc // reduction, kernel_size=1, padding=0, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(nc // reduction, nc, kernel_size=1, padding=0, bias=bias),
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
@@ -2074,37 +2076,94 @@ class CAB(nn.Module):
         y = self.conv_du(y)
         return x * y
 
+
 class HDRAB(nn.Module):
     def __init__(self, in_channels=64, out_channels=64, bias=True):
-        super(HDRAB, self).__init__()
+        super().__init__()
         kernel_size = 3
         reduction = 8
         reduction_2 = 2
 
         self.cab = CAB(in_channels, reduction, bias)
-        
+
         self.conv1x1_1 = nn.Conv2d(in_channels, in_channels // reduction_2, 1)
 
-        self.conv1 = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=1, dilation=1, bias=bias)
+        self.conv1 = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=1,
+            dilation=1,
+            bias=bias,
+        )
         self.relu1 = nn.ReLU(inplace=True)
 
-        self.conv2 = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=2, dilation=2, bias=bias)
+        self.conv2 = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=2,
+            dilation=2,
+            bias=bias,
+        )
 
-        self.conv3 = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=3, dilation=3, bias=bias)
+        self.conv3 = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=3,
+            dilation=3,
+            bias=bias,
+        )
         self.relu3 = nn.ReLU(inplace=True)
 
-        self.conv4 = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=4, dilation=4, bias=bias)
+        self.conv4 = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=4,
+            dilation=4,
+            bias=bias,
+        )
 
-        self.conv3_1 = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=3, dilation=3, bias=bias)
+        self.conv3_1 = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=3,
+            dilation=3,
+            bias=bias,
+        )
         self.relu3_1 = nn.ReLU(inplace=True)
 
-        self.conv2_1 = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=2, dilation=2, bias=bias)
+        self.conv2_1 = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=2,
+            dilation=2,
+            bias=bias,
+        )
 
-        self.conv1_1 = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=1, dilation=1, bias=bias)
+        self.conv1_1 = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=1,
+            dilation=1,
+            bias=bias,
+        )
         self.relu1_1 = nn.ReLU(inplace=True)
 
-        self.conv_tail = nn.Conv2d(in_channels // reduction_2, out_channels // reduction_2, kernel_size=kernel_size, padding=1, dilation=1, bias=bias)
-        
+        self.conv_tail = nn.Conv2d(
+            in_channels // reduction_2,
+            out_channels // reduction_2,
+            kernel_size=kernel_size,
+            padding=1,
+            dilation=1,
+            bias=bias,
+        )
+
         self.conv1x1_2 = nn.Conv2d(in_channels // reduction_2, in_channels, 1)
 
     def forward(self, y):
@@ -2121,71 +2180,94 @@ class HDRAB(nn.Module):
 
         y5 = self.conv3_1(y4_1)
         y5_1 = self.relu3_1(y5)
-        y6 = self.conv2_1(y5_1+y3)
+        y6 = self.conv2_1(y5_1 + y3)
         y6_1 = y6 + y4_1
 
-        y7 = self.conv1_1(y6_1+y2_1)
+        y7 = self.conv1_1(y6_1 + y2_1)
         y7_1 = self.relu1_1(y7)
-        y8 = self.conv_tail(y7_1+y1)
+        y8 = self.conv_tail(y7_1 + y1)
         y8_1 = y8 + y6_1
 
         y9 = self.cab(self.conv1x1_2(y8_1))
         y9_1 = y + y9
 
         return y9_1
-    
+
+
 class MANet_HDRAB(MANet):
     def __init__(self, c1, c2, n=1, shortcut=False, p=1, kernel_size=3, g=1, e=0.5):
         super().__init__(c1, c2, n, shortcut, p, kernel_size, g, e)
         self.m = nn.ModuleList(HDRAB(self.c, self.c) for _ in range(n))
 
+
 import math
+
 from timm.layers import CondConv2d
+
+
 class DynamicConv_Single(nn.Module):
-    """ Dynamic Conv layer
-    """
-    def __init__(self, in_features, out_features, kernel_size=1, stride=1, padding='', dilation=1,
-                 groups=1, bias=False, num_experts=4):
+    """Dynamic Conv layer."""
+
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        kernel_size=1,
+        stride=1,
+        padding="",
+        dilation=1,
+        groups=1,
+        bias=False,
+        num_experts=4,
+    ):
         super().__init__()
         self.routing = nn.Linear(in_features, num_experts)
-        self.cond_conv = CondConv2d(in_features, out_features, kernel_size, stride, padding, dilation,
-                 groups, bias, num_experts)
-        
+        self.cond_conv = CondConv2d(
+            in_features, out_features, kernel_size, stride, padding, dilation, groups, bias, num_experts
+        )
+
     def forward(self, x):
         pooled_inputs = F.adaptive_avg_pool2d(x, 1).flatten(1)  # CondConv routing
         routing_weights = torch.sigmoid(self.routing(pooled_inputs))
         x = self.cond_conv(x, routing_weights)
         return x
 
+
 class DynamicConv(nn.Module):
     default_act = nn.SiLU()  # default activation
+
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True, num_experts=4):
         super().__init__()
         self.conv = nn.Sequential(
-            DynamicConv_Single(c1, c2, kernel_size=k, stride=s, padding=autopad(k, p, d), dilation=d, groups=g, num_experts=num_experts),
+            DynamicConv_Single(
+                c1, c2, kernel_size=k, stride=s, padding=autopad(k, p, d), dilation=d, groups=g, num_experts=num_experts
+            ),
             nn.BatchNorm2d(c2),
-            self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
+            self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity(),
         )
-    
+
     def forward(self, x):
         return self.conv(x)
 
+
 class GhostModule(nn.Module):
     def __init__(self, inp, oup, k=1, ratio=2, dw_size=3, stride=1, act_layer=nn.SiLU, num_experts=4):
-        super(GhostModule, self).__init__()
+        super().__init__()
         self.oup = oup
         init_channels = math.ceil(oup / ratio)
         new_channels = init_channels * (ratio - 1)
 
         self.primary_conv = DynamicConv(inp, init_channels, k, stride, num_experts=num_experts)
 
-        self.cheap_operation = DynamicConv(init_channels, new_channels, dw_size, 1, g=init_channels, num_experts=num_experts)
+        self.cheap_operation = DynamicConv(
+            init_channels, new_channels, dw_size, 1, g=init_channels, num_experts=num_experts
+        )
 
     def forward(self, x):
         x1 = self.primary_conv(x)
         x2 = self.cheap_operation(x1)
         out = torch.cat([x1, x2], dim=1)
-        return out[:, :self.oup, :, :]
+        return out[:, : self.oup, :, :]
 
 
 class Ghost_HGBlock(nn.Module):
@@ -2210,7 +2292,8 @@ class Ghost_HGBlock(nn.Module):
         y.extend(m(y[-1]) for m in self.m)
         y = self.ec(self.sc(torch.cat(y, 1)))
         return y + x if self.add else y
-    
+
+
 class GSConv(nn.Module):
     # GSConv https://github.com/AlanLi1997/slim-neck-by-gsconv
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
